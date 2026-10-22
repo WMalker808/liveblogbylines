@@ -1,6 +1,9 @@
 import os
 from flask import Flask, render_template, request, jsonify
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -51,6 +54,25 @@ def fetch_live_blogs(api_key, from_date, to_date):
     return all_blogs
 
 
+def byline_key(contributors):
+    """
+    Normalise a block's contributors into a hashable key representing how
+    the byline renders. Two blocks share a key only if their bylines would
+    render identically: the same contributors, in the same order.
+
+    CAPI may return contributors as tag-ID strings or as objects; both are
+    handled.
+    """
+    parts = []
+    for c in contributors or []:
+        if isinstance(c, dict):
+            c = c.get("name") or c.get("webTitle") or c.get("id") or ""
+        c = str(c).strip()
+        if c:
+            parts.append(c)
+    return tuple(parts)
+
+
 def analyze_blogs(blogs):
     """
     Count block-level bylines per blog and aggregate by day.
@@ -69,6 +91,14 @@ def analyze_blogs(blogs):
             1 for block in blocks if block.get("contributors")
         )
 
+        # Distinct bylines: a byline that renders exactly the same way on
+        # several blocks is counted once.
+        unique_bylines = {
+            key
+            for key in (byline_key(block.get("contributors")) for block in blocks)
+            if key
+        }
+
         pub_date = blog.get("webPublicationDate", "")[:10]
 
         blog_data.append(
@@ -79,6 +109,7 @@ def analyze_blogs(blogs):
                 "date": pub_date,
                 "total_blocks": len(blocks),
                 "bylined_block_count": bylined_block_count,
+                "unique_byline_count": len(unique_bylines),
             }
         )
 
