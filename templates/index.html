@@ -115,6 +115,7 @@
                 <th>Date</th>
                 <th class="text-end">Total blocks</th>
                 <th class="text-end">Bylined blocks</th>
+                <th class="text-end" title="Distinct bylines – a byline that appears on several blocks exactly the same way is counted once">Unique bylines</th>
                 <th style="width:120px">Coverage</th>
               </tr>
             </thead>
@@ -272,6 +273,11 @@
           <td class="text-end">
             ${blog.bylined_block_count > 0
               ? `<span class="badge rounded-pill badge-byline">${blog.bylined_block_count}</span>`
+              : '<span class="text-muted">0</span>'}
+          </td>
+          <td class="text-end">
+            ${blog.unique_byline_count > 0
+              ? `<span class="badge rounded-pill text-bg-secondary">${blog.unique_byline_count}</span>`
               : '<span class="text-muted">0</span>'}
           </td>
           <td>
